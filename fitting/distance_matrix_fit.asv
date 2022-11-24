@@ -1,0 +1,75 @@
+function Table = distance_matrix_fit(W,A,B,dir,range)
+%DISTANCE_MATRIX_FIT: Fit the change in distance
+% usage: Table = distance_matrix_fit(W,Dir,Range)
+%
+% where
+%     W is a distance vector or distance matrix
+%     dir represents the direction of fitting, 
+%     dir = 1 represents fitting along the row, and dir = 2 represents fitting along the column
+%     Table is a table that reflects changes in parameters
+% fit: y = a(b-c/2*sin(2*d*x+e)^0.5
+
+
+global T_x T_y
+[max_y,max_x] = size(W);
+len = length(range);
+
+% extract data
+if dir == 1
+    x0 = (0:max_x-1)';
+    y0 = W(range,1:max_x,1);
+elseif dir == 2
+    x0 = (0:max_y-1)';
+    y0 = W(1:max_y,range,1);
+end
+
+% fittype: y = a(b-c/2*sin(2*d*x+e)^0.5
+ft = fittype('a*sqrt(b-c*sin(2*d*x+e))','dependent','y', ...
+    'independent','x');
+
+P = [];
+
+if dir == 1
+    omega = pi/T_x;
+    for i = 1:len
+        f = fit(x0,y0(i,:)',ft,'Lower',[7085, A, B, omega, -1.6578], ...
+        'Upper',[7085, A, B, omega, -1.6578],'Startpoint', ...
+        [7085, A, B, omega, -1.6578]);
+        P = [P;f.a,f.b,f.c,f.d,f.e];
+        plot(f,x0,y0(i,:),'x')
+        hold on
+    end
+    xlabel('')
+    ylabel('两颗星直接的距离（千米）')
+
+    R = P(:,1);
+    A = P(:,2);
+    B = P(:,3); 
+    omega = P(:,4);
+    Psi = P(:,5)*180/pi;
+    index = (0:size(P,1)-1)';
+    Table = table(index,R,A,B,omega,Psi);
+
+elseif dir == 2
+    omega = pi/T_y;
+    for i = 1:len
+        f = fit(x0,y0(:,i),ft,'Lower',[7085, A, B, omega, -1.4904], ...
+        'Upper',[, A, B, omega, -1.4904],'Startpoint', ...
+        [6921, A, B, omega, -1.4904]);
+        P = [P;f.a,f.b,f.c,f.d,f.e];
+        plot(f,x0,y0(:,i),'x')
+        hold on
+    end
+    xlabel('')
+    ylabel('两颗星直接的距离（千米）')
+
+    R = P(:,1);
+    A = P(:,2);
+    B = P(:,3); 
+    omega = P(:,4);
+    Psi = P(:,5)*180/pi;
+    index = (0:size(P,1)-1)';
+    Table = table(index,R,A,B,omega,Psi);
+end
+
+end

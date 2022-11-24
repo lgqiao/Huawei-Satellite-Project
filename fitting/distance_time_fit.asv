@@ -1,0 +1,76 @@
+function Table = distance_time_fit(W,A,B,xrange,yrange)
+%DISTANCE_TIME_FIT: Fit the change in time
+% usage: Table = distance_time_fit(W,Xrange,Yrange)
+%
+% where
+%     W is a distance vector or distance matrix
+%     xrange represents the range of the x-coordinate of the fitted satellite
+%     yrange represents the range of the y-coordinate of the fitted satellite
+%     Table is a table that reflects changes in parameters
+
+
+global Radius T
+omega = 2*pi/T;
+len_x = length(xrange);
+len_y = length(yrange);
+
+x0 = (0:T-1)';
+% extract data
+if len_y==1
+    for i = 1:T
+        y0(i,:) = W(xrange,yrange,i);
+    end
+elseif len_x==1
+    for i = 1:T
+        y0(:,i) = W(xrange,yrange,i);
+    end
+end
+
+% fittype: y = a(b-c/2*sin(2*d*x+e)^0.5
+ft = fittype('a*sqrt(b-c*sin(2*d*x+e))','dependent','y', ...
+    'independent','x');
+
+P = [];
+
+if len_x == 1
+    for i = 1:len_y
+        f = fit(x0,y0(i,:)',ft,'Lower',[6921, A, B, omega, -2*pi], ...
+        'Upper',[6921, A, B, omega, 2*pi],'Startpoint', ...
+        [6, A, B, omega, 0]);
+        P = [P;f.a,f.b,f.c,f.d,f.e];
+        plot(f,x0,y0(i,:),'x')
+        hold on
+    end
+    xlabel('')
+    ylabel('两颗星直接的距离（千米）')
+
+    R = P(:,1);
+    A = P(:,2);
+    B = P(:,3); 
+    omega = P(:,4);
+    Psi = P(:,5)*180/pi;
+    index = (0:size(P,1)-1)';
+    Table = table(index,R,A,B,omega,Psi);
+
+elseif len_y==1
+    for i = 1:len_x
+        f = fit(x0,y0(:,i),ft,'Lower',[Radius, A, B, omega, -2*pi], ...
+        'Upper',[Radius, A, B, omega, 2*pi],'Startpoint', ...
+        [Radius, A, B, omega, 0]);
+        P = [P;f.a,f.b,f.c,f.d,f.e];
+        plot(f,x0,y0(:,i),'x')
+        hold on
+    end
+    xlabel('')
+    ylabel('两颗星直接的距离（千米）')
+
+    R = P(:,1);
+    A = P(:,2);
+    B = P(:,3); 
+    omega = P(:,4);
+    Psi = P(:,5)*180/pi;
+    index = (0:size(P,1)-1)';
+    Table = table(index,R,A,B,omega,Psi);
+end
+
+end
